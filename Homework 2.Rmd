@@ -1,0 +1,444 @@
+---
+title: 'SDS 315: Homework 2'
+author: "Ricardo Aguirre"
+date: "2025-01-27"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      echo = FALSE,
+                      eval = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.align = "center")
+
+Data1 <- read.csv("profs.csv")
+Data2 <- read.csv("bikeshare.csv")
+Data3 <- read.csv("capmetro_UT.csv")
+Data4 <- read.csv("billboard.csv")
+
+
+
+
+
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+
+```
+
+
+
+## Problem 1: Beauty, or not, in the classroom
+
+### Part A:
+```{r}
+
+Data1 |>
+  
+  ggplot(aes(x = eval)) +
+  
+    geom_histogram(fill = "deepskyblue3", color = "black") +
+  
+  labs(
+    
+    title = "Distribution of Instructor's Average Course Evaluation Score",
+    
+    x = "Average Course Evaluation Score",
+      
+    y = "Frequency"
+    
+     ) +
+    
+    theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+
+mean(Data1$eval)
+
+median(Data1$eval)
+
+
+
+
+```
+
+Write up: The histogram above displays instructor's average course evaluation scores across the University of Texas. The data shows a a peak around 4 out of 5 , suggesting a high mean eval score across the university. Additionally, the mean eval score is approximately 4, which is similar to the high mean eval score depicted by the graph.
+
+```{r}
+
+Data1 |>
+  
+  ggplot(aes( x = native, y = eval )) +
+    geom_boxplot(fill = "coral3", color = "black") +
+  
+  labs(
+    
+    title = "Course Evaluation Scores by Native English Speaker Status",
+    
+    x = "Native English Speaker",
+    
+    y = "Average Course Evaluation"
+    
+    
+  ) +
+
+  theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+
+```
+
+Write up: The box plots above compare instructor's average course evaluation scores based on their native English speaking status. The mean eval score for non-native English speakers was approximately 3.5 out of 5, while native speakers had a higher score of 4. Thus, English speaking instructors generally have a higher course evaluation score compared to non-native English speakers.
+
+```{r}
+
+Data1 |>
+  
+  ggplot(aes(x = eval)) +
+    geom_histogram(fill = "deepskyblue3", color = "black") +
+  
+  facet_wrap(~gender, nrow = 2) +
+  
+  labs(
+    
+    title = "Distribution of Instructor's Course Evalation Scores by Gender",
+      
+    x = "Average Course Evaluation",
+    
+    y = "Frequency",
+    
+      )+
+
+  theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+
+
+```
+The histograms above display the distribution of instructor's average course evaluation score by gender. Male instructors generally have higher course evaluation scores compared to female ones, depicted by the graph's higher peak and right skew.
+
+```{r}
+Data1 |>
+  
+  ggplot(aes(x = beauty, y = eval)) +
+    geom_jitter() +
+    geom_smooth(method = lm, se = FALSE, color = "red") +
+  labs(
+    
+    title = "Relationship between Course Evaluation Score and Instructor's  Attractivness",
+    
+    x = "Beauty Score(0 is median)",
+    
+    y = "Average Course Evaluation Score"
+    
+    )+
+
+
+  theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+    
+  
+
+```
+Write up: The scatter plot above depicts the correlation between an instructor's eval score based on attractiveness. The data depicts a slight positive correlation between the two variables. Thus, an instructor's attractiveness appears to have a slight positive affect on their eval scores.
+
+## Problem 2: Bike Sharing
+
+### Part A
+
+```{r}
+Data2 |>
+  
+  group_by(hr) |>
+
+summarise(
+  
+    mean_rental = mean(total)
+  
+          ) |>
+
+  ggplot(aes(x = hr, y = mean_rental)) +
+    geom_line(color = "deepskyblue3", linewidth = 1) +
+  labs(
+    
+    title = "Average Bike Rentals in Washington DC by Hour (2011- 2012)",
+    
+    x = "Hours(0-23)",
+    
+    y = "Total Average Bike Rentals"
+    
+      ) +
+
+
+  theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold")) 
+  
+```
+Caption: The graph above compares the total average bike rentals by hour in Washington D.C. The y-axis depicts total average bike rentals while the x-axis lists every hour from 0 to 23. Average bike rentals include total rentals(both causal and registered users) per hour. According to the data depicted, peak ridership occurs between during two intervals. The first interval occurs between hours 6 to 9(6:00 am - 9:00 am) during morning rush hour with average bike rentals peaking at 350 bikes per hour. The second interval occurs between hours 15 to 20 (3:00 pm - 8:00pm) during evening rush hour with average bike rentals peaking at over 450 bikes per hour.
+### Part B
+```{r}
+
+Data2 |>
+
+group_by(hr, workingday) |>
+
+summarise(
+  
+        mean_rental = mean(total)
+  
+          ) |>
+  
+  ggplot(aes(x = hr, y = mean_rental)) +
+    geom_line(color = "deepskyblue3", linewidth = 1 )+
+  
+  facet_wrap(~ workingday)  +
+  
+  labs(
+    
+    title = "Average Bike Rentals Per Hour by Working Day Status",
+    
+    x = "Hours(0-23)",
+    
+    y = "Average Bike Rentals"
+      ) +
+  
+    theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold")) 
+
+  
+  
+```
+Caption: The graphs above depict average bike rentals per hour based on working day status(1 = workday(excluding weekends/holidays), 0 = non work day)) The x-axis depicts the 24 hours in a day(0 to 23) while the y axis depicts average bike rentals within a given hour. According to the data, workdays(1) experience sharper increases in bike usage during the previously mentioned rush hours(morning: hours 5-10, evening: hours 15-20) while non-work days(0) have a narrower slope, during hours 11-15. The graphs depict higher average bike rentals during rush hours for working days while non-working days experience less sharp increases of bike rentals because there are no rush hours. Work days experience higher average bike rentals compared to non-work days.
+### Part c
+
+```{r}
+Data2 |>
+  
+  group_by(weathersit, workingday) |>
+  
+  filter( hr == 8) |>
+  
+  summarise(mean_rental = mean(total), .groups = "drop") |>
+  
+  ggplot(aes(x = as.factor(weathersit), y = mean_rental, fill = as.factor(weathersit))) +
+  
+  geom_bar(stat  = "identity",  color = "black") +
+  
+  facet_wrap(~workingday) +
+  
+  labs(
+    
+    title = "Average Bike Ridership at 9:00 am by Weather Conditions",
+    
+    x = "Weather Conditions(1-Clear/Partly Cloudy, 2 - Mist/Cloudy, 3- Light Precipitation)",
+    
+    y = "Average Bike Rentals"
+    
+    
+     ) +
+  
+    theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold")) 
+
+```
+Caption: The graph above depicts average bike ridership at 9:00 am based on weather conditions. The x-axis depicts weather conditions ranked from 1-4 with lower numbers categorizing generally clearer weather and higher numbers characterizing more hazardous weather conditions such as heavy rain, thunderstorms, and snow. The y-axis depicts average bike rentals within a given hour(in this case 9:00 am). According to the data, clearer weather conditions(1-2) have higher ridership compared to more unfavorable weather conditions(3-4). Additionally, work days experience significantly higher ridership compared to non-workdays with similar weather conditions. 
+
+## Problem 3 - Capital Metro UT Ridership
+
+### Question # 1
+
+```{r}
+
+Data3 <- mutate( Data3,day_of_week = factor(day_of_week, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+                 
+  month = factor(month, levels = c("Sep", "Oct", "Nov"))
+)
+  
+
+Data3 |>
+
+group_by(hour_of_day, day_of_week, month) |>
+  
+summarise(mean_boarding = mean(boarding)) |>
+  ggplot(aes(x = hour_of_day, y = mean_boarding, colour = month)) +
+  geom_line() +
+  
+  facet_wrap(~day_of_week) +
+  
+  labs(
+    
+    title = "Average UT Metro Boardings by Hour of Day",
+    
+    x= "Hour of Day",
+    
+    y = "Average Boardings"
+    
+    
+      ) +
+  
+    theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+
+```
+Caption: The data above depicts average boarding in the UT metro by day, month(September to November), and hour. Peak boarding hours occur from 8:00-10:00 am(morning rush hour) and 5:00-6:00pm(evening rush hour). This pattern is consistent throughout the weekdays except for weekends. This is likely due to student schedules, as students tend to use public transportation in the morning to get to classes, and during evening rush hours(5-6pm) to return home. September(orange line) experiences significantly lower ridership compared to other months, particularly early September. This is likely due to the semester just starting and holidays such as labor day, decreasing boarding rates. Average boarding in November(blue line) on Wednesday, Thursday, and Friday is noticeably lower compared to other months. This trend could be explained by breaks such as Thanksgiving break towards the end of the semester, decreasing the need for the UT bus system.
+
+
+
+### Question # 2
+```{r}
+Data3 <- mutate( Data3,day_of_week = factor(day_of_week, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+                 
+  month = factor(month, levels = c("Sep", "Oct", "Nov"))
+)
+
+Data3 |>
+  ggplot(aes(x = temperature, y = boarding, color = as.factor(weekend))) +
+    geom_point(alpha= 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~hour_of_day ) +
+  
+  labs(
+    
+    title = "Effect of Temperature(Farenheit) on UT Metro Ridership",
+    
+    x = "Temperature(Farenheit)",
+    
+    y =  "Total Boarding"
+    
+  ) +
+  
+    theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+  
+
+
+
+```
+
+Caption: The faceted scatter plot depicts the relationship between temperature(Fahrenheit) and total boarding within the UT metro system, separated by hour of the day(6 am - 9 pm ). Weekday ridership(red) is significantly higher than weekend ridership(blue). Peak ridership occurs between 10 am - 6pm, containing the highest density of points. Generally, temperature appears to have little affect on total boarding, likely due to students having to rely on the metro to commute to class.
+
+## Problem 4: Wrangling the Billboard Top 100
+
+### Part A:
+```{r}
+top10_songs <- Data4 |>
+
+  group_by(performer, song) |>
+  
+  summarise(count = n(), .groups = "drop") |>
+  
+  slice_max(count, n = 10) |>
+  
+  arrange(desc(count))
+
+top10_songs |>
+  
+  kbl(col.names = c("Performer", "Song", "Weeks on Billboard Top 100" ), 
+      caption = "Top 10 Songs With The Most Time On the Billboard Top 100(1958-202)" ) |>
+  
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+Caption: The table above contains the Top 10 songs with the most billboard top 100 time from 1958-2022, categorized by performers and their respective song that made the top 10.
+### Part B:
+
+```{r}
+
+filtered_data <- Data4|>
+  
+  filter(year > 1958 & year < 2021)
+
+unique_songs <- filtered_data |>
+  
+  group_by(year) |>
+  
+  summarise(unique_songs = n_distinct(song), .groups = "drop")
+
+unique_songs |>
+  
+  ggplot(aes(x = year, y = unique_songs)) +
+  
+    geom_line(color = "deepskyblue3", size = 1) +
+    geom_point(color = "coral") +
+  
+  labs(
+    
+    title = "Musical Diversity of the Billboard Top 100 by Year",
+    
+    x = "Year",
+    
+    y = "Number of Unique Songs"
+        
+  ) +
+  
+    theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+  
+  
+  
+  
+
+```
+Caption: The graph above depicts the number of unique songs on the Billboard Top 100 from 1959-2020. According to the data, musical diversity peaked in the 1960's and declined from 1970's to 2000. This may be due to the fact that genres of music such as pop and rock spiked in popularity during the 60's, so musical diversity declined once these genres became more established. Another spike in musical diversity occurred in the early 2010's onward likely due to streaming platforms and the internet becoming increasingly accessible. 
+
+### Part C:
+
+```{r}
+ten_week_hit <- Data4|>
+  
+  group_by(performer, song) |>
+  
+  summarise(weeks_on_chart = n(), .groups = "drop")|>
+  
+  filter(weeks_on_chart >= 10)
+
+artist_hit <- ten_week_hit |>
+  
+  group_by(performer) |>
+  
+  summarise(ten_week_count = n(), .groups = "drop") |>
+  
+  filter(ten_week_count >= 30)
+
+artist_hit |>
+  
+  ggplot( aes(x = fct_reorder(performer, ten_week_count), y = ten_week_count)) +
+  geom_bar(stat = "identity", fill = "deepskyblue3", color = "black") +
+  coord_flip() +
+  labs(
+    
+    title = "Top Artists with the Most Ten Week Hits on the Billboard Top 100",
+    
+    x = "Performer",
+    
+    y = "Number of Ten Week Hits"
+    
+    
+  ) +
+  
+    theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+  
+  
+  
+  
+
+```
+Caption: The bar plot above depicts the top 19 artists with the highest number of "Ten Week Hits". The artists with the most ten week hits include Elton John, Madonna, and Kenny Chesnever. Generally, artist with high popularity tend to dominate the billboard top 100.
