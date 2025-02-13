@@ -1,0 +1,418 @@
+---
+title: "Homework 3"
+author: "Ricardo Aguirre"
+date: "2025-02-10"
+output:
+  html_document: default
+  pdf_document: default
+---
+UT EID: Rea2462
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      eval = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.align = "center")
+
+Data1 <- read.csv("gasprices.csv")
+Data2 <- read.csv("sclass.csv")
+Data3 <- read.csv("nbc_pilotsurvey.csv")
+Data4 <- read.csv("ebay.csv")
+
+
+
+
+
+
+library(tidyverse)
+library(kableExtra)
+library(mosaic)
+library(infer)
+
+```
+
+## Problem 1
+
+
+### Theory A: Gas stations charge more if they lack direct competition in sight:
+
+# Question: 
+# Does the presence of competitors influence  gas prices?
+
+### Approach:
+### We group the data by competitor presence and compare mean prices. We perform a bootstrap with 10,000 samples.
+
+```{r}
+
+  ggplot(Data1, aes(x = Competitors, y = Price, fill = Competitors))+
+    geom_boxplot()+
+      labs(title = "Gas Prices v. Competitors", x = "Competitors Nearby", y = "Gas Price(USD)") +
+  
+  theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+mean_gas<- Data1|>
+
+group_by(Competitors) |>
+summarise(mean_gas = mean(Price))
+print(mean_gas)
+
+
+  
+
+bootstrap <- do(10000) * mean(Price ~ Competitors, data = resample(Data1))
+print(confint(bootstrap, level = 0.95))
+
+
+```
+### Results:
+### The mean price with competitors is $1.83, while without  competitors it is $1.85. The 95% confidence interval for the difference is 9(-0.2, 0.03)
+
+### Conclusion:
+### The hypothesis that gas stations charge more  without competitors is weakly supported; the difference is not statistcially significant.
+
+
+### Theory B: Richer areas have higher gas prices
+
+### Question:
+### Does higher median income in ZIP codes correlate with higher gas prices?
+
+### Approach:
+### We use Pearson correlation and linear regression.
+
+```{r}
+
+ggplot(Data1, aes(x = Income, y = Price))+
+    geom_point(color = "coral") +
+    geom_smooth(method = "lm", se = FALSE,  color = "deepskyblue3") +
+  labs(
+    
+    title = "Correlation Between Median Income of Zipcodes and Gas Prices",
+    
+    x = "Median Income",
+    y = "Gas Price"
+    
+  )+
+  
+    theme_bw() +
+  
+   theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+
+cor_test <- cor.test(Data1$Income, Data1$Price,  method = "pearson")
+print(cor_test)
+
+```
+### Results
+### Pearson correlation coefficient; 0.396. The 95% confidence interval ranges from 0.217 to 0.5481, suggesting a moderate positive relationship.
+
+### Conclusion:
+### Data supports the theory that richer areas tned to have higher gas  prices.
+
+
+# Theory C: Gas stations at stoplights charge more
+
+### Question:
+### Do gas stations with stoplights nearby have higher prices?
+
+### Approach:
+### We compare means  and use bootstrap resampling with a 95% confidence interval (10,000 resamples)
+
+```{r}
+ggplot(Data1, aes(x = Stoplight, y = Price, fill = Stoplight)) +
+  geom_boxplot()+
+  labs(title = "Effect of Stoplights on Gas Prices", x = "Stoplight Presence", y = "Gas Price")+
+  theme_bw() +
+  
+  theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+mean_gas<- Data1|>
+
+group_by(Stoplight) |>
+summarise(mean_gas = mean(Price))
+print(mean_gas)
+
+bootstrap <- do(10000) * mean(Price ~ Stoplight, data = resample(Data1))
+print(confint(bootstrap, level = 0.95))
+
+
+  
+```
+
+### Results:
+### The mean price with a stoplight is $1.86, without a stoplight is $1.87. The confidence  interval (1.844, 1.896) overlaps.
+
+### Conclusion:
+### There is inconclusive evidence that stoplights significantly influence gas prices.
+
+## Theory D: Gas stations with highway access charge more
+
+### Question:
+### Does highway access correspond to higher gas prices?
+
+### Approach:
+### We group data and compare means with bootstrap resampling.
+
+```{r}
+
+ggplot(Data1, aes(x = Highway, y = Price, fill = Highway)) +
+  geom_boxplot() +
+  labs(title = "Effect of Highways on Gas Prices", x = "Highways(Y/N)", y = "Gas Prices") +
+  
+   theme_bw() +
+  
+  theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+mean_gas<- Data1|>
+  group_by(Highway)|>
+summarise(mean_gas = mean(Price))
+print(mean_gas)
+
+bootstrap <- do(10000) * mean(Price ~ Highway, data = resample(Data1))
+print(confint(bootstrap, level = 0.95))
+
+  
+
+```
+
+### Results:
+### Mean price with highway access: $1.90; without access : $ 1.85. The confidence interval for the difference (1.8677, 1.931)
+
+### Conclusion:
+### Data supports the hypothesis that highway access leads to higher gas prices.
+
+## Theory E: Shell charges more than other brands.
+
+### Question:
+### Does Shell have higher prices compared to other brands?
+
+### Approach:
+### We compare mean prices with bootstrapped confidence intervals.
+```{r}
+
+Data1<- Data1|>
+  
+  mutate(if_shell = ifelse(Brand =="Shell", "Shell", "Non-Shell")) 
+
+ggplot(Data1, aes(x =if_shell, y = Price, fill = if_shell )) +
+  geom_boxplot()+
+  labs(title= "Comparison of Shell Gas Prices v. Non Shell", x = "Gas Brand", y = "Price") +
+theme_bw() +
+  
+  theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+mean_gas <- Data1|>
+  group_by(if_shell)|>
+  summarise(mean_gas = mean(Price))
+print(mean_gas)
+
+bootstrap_shell <- do(10000) * mean(~ Price, data = resample(Data1 %>% filter(if_shell == "Shell")))
+bootstrap_nonshell <- do(10000) * mean(~ Price, data = resample(Data1 %>% filter(if_shell == "Non-Shell")))
+
+print(confint(bootstrap_shell, level = 0.95))
+print(confint(bootstrap_nonshell, level = 0.95))
+
+
+
+
+
+```
+
+### Results:
+##3 Shell gas stations have a mean price of $1.88 versus 1.86 for non-Shell. The confidence intervals (1.8514, 1.9166) and (1.8383, 1.8740) confirm a moderate difference.
+
+### Conclusion: 
+### Data supports the claim that Shell  charges more for their gas with a 95% confidence interval.
+
+## Problem 2
+
+
+### Part A: Average mileage for 2011 S-Class 63 AmG cars
+
+### Question:
+### What is the average mileage for the 2011 S-Class 63 AMG cars?
+
+### Approach:
+### Filter the dataset and calculate the mean using a bootstrap confidence interval.
+```{r}
+filteredData <- Data2 |> 
+  filter(year == 2011, trim == "63 AMG") 
+
+averageMile <- filteredData |>  
+  summarise(averageMile = mean(mileage))
+
+print(averageMile)
+
+
+  
+```
+
+### Results:
+### Mean milage: 28, 997.34. The 95% confidence interval ranges from 26,215, to 31,783 miles.
+
+### Conclusion:
+### It can be stated with 95% confidence that the mean mileage lies within the calculated interval.
+
+
+## Part B: Proportion of black 2014 S-Class 550 cars
+
+### Question:
+### What proportion of 2014 S-Class 505 cars are black?
+
+### Approach:
+### We filter the dataset, create a binary indicator (0-false, 1-true), and compute  the mean with boostrap resampling
+
+```{r}
+
+filterdData <- Data2|>
+
+filter( year == 2014, trim == "550")|>
+
+mutate(isBlack = as.numeric(color == "Black"))
+
+carProportion <- mean(filterdData$isBlack)
+print(paste("Proportion of black cars: ", carProportion))
+
+
+bootstrap <- do(10000) * mean(~ isBlack, data = resample(filterdData))
+print(confint(bootstrap, level = 0.95))
+
+```
+
+### Results:
+### Proportion of black cars: 43.48%. The confidence interval is (41.68%, 45.31%).
+
+### Conclusion:
+### The proportion of black cars lies  within the confidence , there fore we can say with 95% confidence that our findings have statistical significance
+
+## Problem 3: Happiness scores between "Living with Ed" and "My Name is Earl"
+
+
+
+## Part A:
+
+### Question:
+### Which show elicits more happiness:
+
+### Approach:
+### We filter the dataset and compute the mean difference with bootstrapped confidence intervals.
+```{r}
+filterdData <- Data3|>
+
+filter(Show %in% c("Living with Ed", "My Name is Earl"))
+
+mean_happy <-filterdData|>
+  group_by(Show)|>
+  summarise(mean_happy = mean(Q1_Happy))
+print(mean_happy)
+
+
+bootstrap<- do(10000) * diffmean(Q1_Happy ~ Show, data = resample(filterdData))
+print(confint(bootstrap, level = 0.95))
+
+  
+
+```
+
+### Results:
+### Mean happiness scores: 3.93 for Living with Ed and 3.78 for My Name is Earl. The confidence interval (-0.405, 0.108) includes zero.
+
+### Conclusion:
+### Neither show reliabily produces more happiness due to overalps within the confidence intervals
+
+
+## Part B: Annoyance scores between "The Biggest Loser" and " The Apprentice".
+
+### Question:
+### Which show generates more annoyance?
+
+### Approach:
+### We filter the datset and compute the mean difference with bootstrapped confidence intervals.
+```{r}
+
+filterdData <- Data3|>
+
+filter(Show %in% c("The Biggest Loser", "The Apprentice: Los Angeles"))
+
+mean_annoy <-filterdData|>
+  group_by(Show)|>
+  summarise(mean_annoy = mean(Q1_Annoyed))
+print(mean_annoy)
+
+
+bootstrap <- do(10000) * diffmean(Q1_Annoyed ~ Show, data = resample(filterdData))
+print(confint(bootstrap, level = 0.95))
+
+  
+
+```
+### Results:
+### The Apprentice mean annoyance is approximatley 2.31; The Biggest Loser: 2.04. The confidence interval(-0.520, -0.024) excludes zero.
+
+### Conclusion:
+### We can say with 95% confidence that the Apprentice is more annyoing on average
+
+
+
+## Part C: Proportion of viewers confused by  "Dacngin with the Stars"
+
+### Question:
+### What proportion of viewers find "Dancing with the Stars" confusing?
+
+### Approach:
+### We filter responses and compute the proportion of those confused
+
+```{r}
+filterdData <- Data3|>
+  filter(Show =="Dancing with the Stars")
+
+filterdData <- filterdData|>
+  mutate(isConfused = as.numeric(Q2_Confusing >= 4))
+
+conf_prop<- mean(filterdData$isConfused)
+print(paste("Proportion of Viewers who found the show confusing", conf_prop))
+
+bootstrap<- do(10000) * mean(~ isConfused, data = resample(filterdData))
+print(confint(bootstrap, level = 0.95))
+
+
+
+```
+### Results:
+### Proportion confused: 7.73%. The 95% confidence interval is (3l.87%, 11.60%)
+
+### Conclusion:
+### It can be stated with 95% confidence that a small fraction of viewers find the show confusing.
+
+
+## Problem 4:
+
+### Question:
+### does paid search advertising increse eBay revenue?
+
+### Approach:
+### We compare revenue ratios before and after advertising changes.
+
+```{r}
+
+Data4 <- Data4 |>
+  mutate(revenue_ratio = rev_after/ rev_before)
+
+
+mean_ratio <- Data4|>
+  group_by(adwords_pause) |>
+  summarise(mean_ratio = mean(revenue_ratio))
+print(mean_ratio)
+
+bootstrap <- do(10000) * diffmean(revenue_ratio ~ adwords_pause, data = resample(Data4))
+print(confint(bootstrap, level = 0.95))
+
+```
+
+### Results:
+### Control mean: 0.949; treatment mean: 0.897. The 95 % confidence interval (-0.0906, -0.0129) does not include zero.
+
+### Conclusion:
+### The results suggests that pausing advertising decreased revenue, supporting  the value of paid search.
