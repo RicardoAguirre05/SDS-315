@@ -1,0 +1,206 @@
+---
+title: 'Homework #4'
+author: "Ricardo Aguirre"
+date: "`r Sys.Date()`"
+output: html_document
+---
+UT EID: Rea2462
+Github link :
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      eval = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.align = "center")
+
+
+
+library(tidyverse)
+library(kableExtra)
+library(mosaic)
+library(parallel)
+
+```
+
+```{r}
+numSimulation <- 100000 # Number of Monte Carlo Simulations
+numTrades <- 2021 #Total Trades
+p_flagged <- 0.024 # Baseline flagging rate
+
+simulated_flags <- rbinom(numSimulation, size = numTrades, prob = p_flagged)
+
+p_value <-sum(simulated_flags >= 70) / numSimulation
+
+ggplot(data.frame(flags = simulated_flags), aes(x = flags)) +
+  geom_histogram(bindwidth = 1, fill = "deepskyblue3", color = "black")+
+
+  labs(title = "Distribution of Flagged Trades Under Null Hypothesis", x = "Number of Flagged Trades", y = "Frequency") +
+  theme_bw() +
+  
+  theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+cat("P-value:", p_value, "\n")
+
+
+
+```
+The null hypothesis tested states that Iron Bank employees are being flagged at the same rate as all other traders stated at 2.4%. The test statistic is the number of flagged trades out of 2021. A Monte Carlo simulation is used to generate 100,00 simulated values of flagged trades and compare them to the observed value of 70. The p-value is the proportion of simulated cases where the number of flagged trades is greater than or equal to 70. A smaller p-value suggests we have evidence to reject the null hypothesis(< 0.5). The histogram above depicts the expected distribution of flagged trades, assuming the null hypothesis is true. The observed number of flagged trades(70) lies on the right extreme of the graph. The p-value output by the model is 0.0021, meaning only 0.21% of simulations resulted in 70 or more flagged trades. Because the p-value = 0.0021 is much smaller than 0.05, the null hypothesis is rejected, suggesting Iron Bank employees are flagged at significantly higher rates than expected by chance alone. Therefore, there is strong evidence suggesting that the amount of flagged trades is unlikely due to chance, and the SEC may want to pursue further investigation.
+
+```{r}
+numSimulations <- 100000 # Number of Monte Carlo simulations
+numInspections <- 50 # Total inspections for Gourmet Bites
+p_violation <- 0.03 # Baseline probability of health code violation(3%)
+
+# simulates 100,00 trials
+simulated_violations <- rbinom(numSimulations, size = numInspections, prob = p_violation)
+
+p_value <- sum(simulated_violations >=8) /numSimulations
+
+ggplot(data.frame(violations = simulated_violations), aes(x = violations)) +
+  geom_histogram(binwidth = 1, fill = "deepskyblue3", color = "black") +
+  labs(title = "Distribution of Health Code Violations Under Null Hypothesis", x = "Number of Violations", y = "Frequency") +
+  
+  theme_bw() +
+  
+  theme(plot.title = element_text(hjust = 0.5, size = 15,  face = "bold"))
+
+cat("P-value:", p_value, "\n")
+
+```
+According to the null hypothesis, Gourmet Bites' rate of health code breaches is the same as the 3% citywide average. The number of violations in 50 inspections under the null hypothesis is the test statistic. Assuming the null hypothesis is correct, this is accomplished by contrasting the eight violations that were detected with a 100,000-trial Monte Carlo simulation. Assuming the null hypothesis is correct, the predicted distribution of violations is shown in the above histogram. In comparison, the observed number of infractions (8) is an extreme value on the right side of the distribution. Merely 0.012% of the simulations produced eight or more violations, according to the p-value output of 0.00012. Given the extremely low p-value of 0.00012 (<0.05), the null hypothesis can be rejected. This suggests that Gourmet Bites is receiving significantly more health code violations than expected by chance alone. Thus, there is strong evidence that Gourmet Bite's violation rate is not consistent with a normal citywide variation.
+
+```{r}
+
+# Load necessary libraries
+library(tidyverse)
+
+# Define observed and expected jury counts
+observed_jurors <- c(85, 56, 59, 27, 13)
+total_jurors <- sum(observed_jurors)
+expected_distribution <- c(0.30, 0.25, 0.20, 0.15, 0.10)
+expected_jurors <- total_jurors * expected_distribution
+
+# Function to compute the chi-squared statistic
+chi_squared_statistic <- function(observed, expected) {
+  sum((observed - expected)^2 / expected)
+}
+
+# Compute chi-squared statistic for observed data
+chi_value <- chi_squared_statistic(observed_jurors, expected_jurors)
+
+# Monte Carlo simulation
+num_simulations <- 100000
+chi_simulation <- replicate(num_simulations, {
+  simulated_counts <- rmultinom(1, total_jurors, expected_distribution)
+  chi_squared_statistic(simulated_counts, expected_jurors)
+})
+
+# Compute p-value
+p_value <- sum(chi_simulation >= chi_value) / num_simulations
+
+# Output results
+cat("Chi-Squared Statistic:", chi_value, "\n")
+cat("P-value:", p_value, "\n")
+
+
+
+
+```
+
+This analysis sought to determine whether the racial composition of jurors selected by a particular judge is significantly different from the country's eligible jury pool distribution. A chi-squared goodness-of0fit test with Monte Carlo simulations was performed to assess whether observed jury selection is consistent. 
+
+Null Hypothesis(H0): The judge selects jurors in proportion to the county's demographic distribution
+
+Alternative Hypothesis (H1): The jury selection does not match the county's demographic distribution, showing bias.
+
+This test was performed by comparing the actual number of jurors selected for each group to the expected number under normal circumstances. The calculated chi-squared statistic is x^2 = 12.426. To determine whether this chi-squared statistic requires further analysis, 100,000 Monte Carlo simulations were performed under the assumption of fair jury selection. The P-value = 0.01422. Because the p-value is less than 0.05, we reject the null hypothesis meaning that the observed jury selection is significantly different from what would be expected under normal circumstances. Thus, the judge's jury selection does not reflect the county's racial demographics. This discrepancy could be due to multiple factors such as systemic racism, or court bias. Thus further investigation should be conducted to see if certain demographics are being affected by the jury selection process.
+
+
+```{r}
+
+letter_frequencies <- read.csv("letter_frequencies.csv")
+
+letter_frequencies$Probability <- letter_frequencies$Probability / sum(letter_frequencies$Probability)
+
+brown_sentences <- readLines("brown_sentences.txt", warn = FALSE)
+
+
+calculate_chi_squared <- function(sentence, freq_table) {
+  
+  clean_sentence <- gsub("[^A-Za-z]", "", sentence)
+  clean_sentence <- toupper(clean_sentence)
+  
+  # Handle empty sentences
+  if (nchar(clean_sentence) == 0) return(NA)
+
+  # Count occurrences of each letter
+  observed_counts <- table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+
+  # Calculate expected counts
+  total_letters <- sum(observed_counts)
+  
+  if (total_letters == 0) return(NA)  # Avoid division by zero
+  
+  expected_counts <- total_letters * freq_table$Probability
+  
+  # Compute chi-squared statistic
+  chi_squared_stat <- sum((observed_counts - expected_counts)^2 / expected_counts, na.rm = TRUE)
+  
+  return(chi_squared_stat)
+}
+
+# Initialize vector to store chi-squared values
+null_chi_sq <- numeric(length(brown_sentences))
+
+# Compute chi-squared statistic for each Brown Corpus sentence
+for (i in seq_along(brown_sentences)) {
+  null_chi_sq[i] <- calculate_chi_squared(brown_sentences[i], letter_frequencies)
+}
+
+# Remove NA values
+null_chi_sq <- null_chi_sq[!is.na(null_chi_sq)]
+
+# List of given sentences for watermark detection
+sentences <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+# Initialize vector to store chi-squared values
+chi_sq_values <- numeric(length(sentences))
+
+# Compute chi-squared statistic for each test sentence
+for (i in seq_along(sentences)) {
+  chi_sq_values[i] <- calculate_chi_squared(sentences[i], letter_frequencies)
+}
+
+# Calculate p-values by comparing test sentences to the null distribution
+p_values <- sapply(chi_sq_values, function(x) mean(null_chi_sq >= x, na.rm = TRUE))
+
+# Store results in a table
+results <- data.frame(Sentence = 1:10, Chi_Square = chi_sq_values, P_Value = round(p_values, 3))
+
+# Print results
+print(results)
+
+watermarked_sentence <- which.min(p_values)
+cat("\nThe watermarked sentences is sentence number:", watermarked_sentence, "\n")
+
+
+
+
+
+
+```
+This analysis determines if one of the provided sentences was watermarked by an LLM by comparing its letter frequency distribution to normal English text. The null distribution of chi-squared values was created using Brown Corpus sentences. A chi-squared statistic was used for each of the 10 given sentences, and the p-value was calculated by comparing it to the null distribution. 
+
+Sentence 6 has the lower-p value = 0.009 which means it deviates significantly from normal English letter distributions. Because of such a small proportion, we can say with high certainty that Sentance 6 is watermarked.
