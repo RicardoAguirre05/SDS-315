@@ -1,0 +1,239 @@
+---
+title: "Homework 8"
+author: "Ricardo Aguirre"
+date: "`r Sys.Date()`"
+output: html_document
+---
+UT EID: Rea2462
+Github link: 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      eval = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.align = "center")
+
+creatinine <- read.csv("creatinine.csv")
+
+covid <- read.csv("covid.csv")
+
+milk <- read.csv("milk.csv")
+
+
+
+
+
+library(tidyverse)
+library(mosaic)
+
+
+head(creatinine)
+head(covid)
+head(milk)
+
+
+```
+
+
+
+
+
+## Problem 1: Regression Warm-Up
+
+
+### Part A
+```{r}
+
+model <- lm(creatclear ~ age, data = creatinine)
+
+coef(model)
+
+predict(model, newdata = data.frame(age = 55))
+
+
+
+```
+According to the regression model, the creatinine clearance rate for a 55-year-old is 113.72 ml/minute. This result was calculated using the `lm()` and `coef()` functions to find the Intercept(Beta 0) and slope (Beta 1) which were approximately 147.81 and -0.62. The `predict()` function was used to predict the data for a 55-year-old.
+
+### Part B
+
+According to the regression model created above the effective creatine clearance rate for all ages decreases by a factor of approximately 0.62 ml/minute. This result was calculated the `lm()` and `coef` functions to find both B0(intercept) and B1(slope).
+
+```{r}
+
+B0 <- 147.82
+
+B1 <- -0.62
+
+
+pred_40 <- B0 + B1 * 40
+
+pred_60 <- B0 + B1 * 60
+
+
+actual_40 <- 135
+
+actual_60 <- 112
+
+
+residual_40 <- actual_40 - pred_40
+
+residual_60 <- actual_60 - pred_60
+
+residual_40
+residual_60
+
+
+
+
+
+```
+
+### Part C
+Using the previously calculated B0 and B1 values I calculated the predicted creatine clearance rate(ml/minute) for both age groups. This was performed by plugging in both beta values into the linear regression equation(creatineclear = B0 - B1 * age). The residuals(actual - predicted) were calculated for both the 40-year-old and 60-year-old to account for make fair comparisons accounting for age and other confounding variables. The 40-year-old had a residual value of + 11.98 while the 60-year-old was +1.38. Seeing as the 40-year-old had a higher residual value we can say that they were healthier than the 60-year-old.
+
+
+## Problem 2: Modeling Disease Growth
+
+### Italy Growth Rate/Double Time:
+```{r}
+
+italy_data <- covid |> filter(country == "Italy")
+
+italy_data <- italy_data |> filter(deaths > 0) |>
+  mutate(log_deaths = log(deaths))
+
+
+model_italy <- lm(log(deaths) ~ days_since_first_death, data = italy_data)
+
+
+coef(model_italy)
+
+
+growth_rate_italy <-coef(model_italy)["days_since_first_death"]
+round(growth_rate_italy)
+
+growth_rate_italy
+
+
+doubling_time_italy <- log(2)/ growth_rate_italy
+round(doubling_time_italy,1)
+
+boot_italy <- do(10000) * lm(log_deaths ~ days_since_first_death, data = mosaic::resample(italy_data))
+
+confint(boot_italy, level = 0.95) |> filter(name == "days_since_first_death")
+
+boot_italy_doubling <- boot_italy |>
+  mutate(doubling_time = log(2) / `days_since_first_death`)
+
+boot_italy_doubling |>
+  summarize(
+    lower = quantile(doubling_time, 0.025),
+    upper = quantile(doubling_time, 0.975)
+  )
+
+
+```
+
+We fit an exponential model to Italy's COVID-19 deaths using the formula:
+
+log(deaths) = B0 + B1 *days_since_first_death
+
+From our model the growth rate was 0.183. This means that the log number of deaths increased by 0.183 per day in Italy.
+
+Using bootstrap sampling with replacement, a 95% confidence interval was calculated (0.160, 0.208). This means that we are 95% sure that Italy's  exponential growth rate lies between this interval.
+
+The estimated doubling time was calculated using the equation
+
+double time =  log(2)/ growth rate
+
+The daily number of deaths in Italy was calculated to double every 3.8 days. 
+A bootstrapped confidence interval was used to calculate a confidence interval (3.33, 4.34) days at 95% confidence
+
+
+### Spain Growth Rate/Doubling Time
+
+```{r}
+
+
+# Filter Spain
+spain_data <- covid |> filter(country == "Spain") |>
+  filter(deaths > 0) |>
+  mutate(log_deaths = log(deaths))
+
+model_spain <- lm(log_deaths ~ days_since_first_death, data = spain_data)
+coef(model_spain)
+
+growth_rate_spain <- coef(model_spain)["days_since_first_death"]
+round(growth_rate_spain, 3)
+
+doubling_time_spain <- log(2) / growth_rate_spain
+round(doubling_time_spain, 1)
+
+boot_spain <- do(10000) * lm(log_deaths ~ days_since_first_death, data = mosaic::resample(spain_data))
+confint(boot_spain, level = 0.95) |> filter(name == "days_since_first_death")
+
+boot_spain_doubling <- boot_spain |>
+  mutate(doubling_time = log(2) / `days_since_first_death`)
+
+boot_spain_doubling |>
+  summarize(
+    lower = quantile(doubling_time, 0.025),
+    upper = quantile(doubling_time, 0.975)
+  )
+
+
+```
+
+We fit an exponential model to Spain's COVID-19 deaths using the formula:
+
+log(deaths) = B0 + B1 *days_since_first_death
+
+From our model the growth rate was 0.276. This means that the log number of deaths increased by 0.276 per day in Italy.
+
+Using bootstrap sampling with replacement, a 95% confidence interval was calculated (0.235, 0.317). This means that we are 95% sure that Italy's  exponential growth rate lies between this interval.
+
+The estimated doubling time was calculated using the equation
+
+double time =  log(2)/ growth rate
+
+The daily number of deaths in Italy was calculated to double every 2.5 days. 
+A bootstrapped confidence interval was used to calculate a confidence interval (2.18, 2.94) days at 95% confidence
+
+
+
+```{r}
+ggplot(data = covid, aes(x = days_since_first_death, y = deaths, colour = country)) +
+  geom_line(size = 1) +
+  labs(
+    title = "COVID-19 Daily Deaths Since First Death",
+    x = "Days since first death",
+    y = "Daily Deaths"
+  ) + 
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 15, face = "bold")
+  )
+
+
+```
+
+
+## Problem 3: Price Elasticity of Demand
+
+```{r}
+
+model_milk <- lm(log(sales) ~ log(price), data = milk)
+coef(model_milk)  
+
+boot_elasticity <- do(10000) * lm(log(sales) ~ log(price), data = mosaic::resample(milk))
+
+head(boot_elasticity)
+
+confint(boot_elasticity, level = 0.95)
+
+```
+
+Modeling the milk.csv data set, a model was created in R. The estimated price of elasticity of demand is -1.598, meaning on average a 1% increase price results approximately a 1.6% decrease in sales. A bootstrapped confidence interval(with replacement) was performed at 95% confidence interval for elasticity.  The confidence interval is  [-1.773, -1.457]. Because the confidence interval is entirely negative we can say with 95% confidence that a 1% increase in price results in a decrease in sales.
+
